@@ -6,36 +6,18 @@ from app.core.config import settings
 EXPERIMENTS_FILE = os.path.join(settings.STORAGE_DIR, "experiments.json")
 
 def get_all_experiments() -> List[Dict[str, Any]]:
+    """
+    Reads persistent experiment runs from disk (storage/experiments.json).
+    Returns empty list if no experiments have been executed yet.
+    """
     if not os.path.exists(EXPERIMENTS_FILE):
-        default_experiments = [
-            {
-                "run_id": "exp_001",
-                "experiment_name": "Seal Detection Baseline",
-                "dataset": "seal_dataset_v1",
-                "map50": 0.82,
-                "precision": 0.84,
-                "recall": 0.80,
-                "is_best": False,
-                "date": "2026-01-01"
-            },
-            {
-                "run_id": "exp_002",
-                "experiment_name": "Sri Lankan Seal Fine-Tuning v2",
-                "dataset": "seal_dataset_v2",
-                "map50": 0.94,
-                "precision": 0.95,
-                "recall": 0.92,
-                "is_best": True,
-                "date": "2026-07-27"
-            }
-        ]
-        save_experiments(default_experiments)
-        return default_experiments
+        return []
 
     with open(EXPERIMENTS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def save_experiments(experiments: List[Dict[str, Any]]):
+    os.makedirs(settings.STORAGE_DIR, exist_ok=True)
     with open(EXPERIMENTS_FILE, "w", encoding="utf-8") as f:
         json.dump(experiments, f, indent=2)
 

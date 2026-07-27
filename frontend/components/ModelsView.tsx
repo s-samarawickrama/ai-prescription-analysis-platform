@@ -48,6 +48,12 @@ export const ModelsView: React.FC = () => {
 
       {loading ? (
         <div className="p-8 text-center text-slate-500 font-mono text-xs">Loading model registry...</div>
+      ) : Object.keys(models).length === 0 ? (
+        <div className="bg-[#16191f] border border-[#232f3e] rounded p-8 text-center text-slate-400 font-mono text-xs space-y-2">
+          <Boxes className="w-8 h-8 text-slate-600 mx-auto" />
+          <p className="font-semibold text-slate-200">No Model Builds Trained Yet</p>
+          <p className="text-slate-500 text-[11px]">Upload a dataset in Datasets tab and run a Training Job to produce trained detector builds.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(models).map(([modelKey, group]) => (
