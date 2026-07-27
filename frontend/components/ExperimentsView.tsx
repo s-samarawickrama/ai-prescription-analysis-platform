@@ -40,6 +40,11 @@ export const ExperimentsView: React.FC = () => {
 
         {loading ? (
           <div className="text-center py-6 text-slate-500">Loading experiments from storage...</div>
+        ) : experiments.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 font-mono text-xs space-y-1">
+            <p className="font-semibold text-slate-200">No Experiments Recorded Yet</p>
+            <p className="text-slate-500 text-[11px]">Run a training job on the Training tab to automatically record hyperparameter trials here.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {experiments.map((exp) => (
