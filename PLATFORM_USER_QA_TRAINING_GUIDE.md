@@ -32,18 +32,27 @@ During PyTorch fine-tuning, the neural network learns visual features associated
 
 # PART 2: COMPREHENSIVE TRAINING & MLOPS MANUAL
 
-## 1. DATASET CAPACITY & SIZING FLEXIBILITY
+## 1. DATASET COMPOSITION: POSITIVE VS NEGATIVE EXAMPLES
+To build a production-grade AI model that avoids false positive detections, your dataset must contain both positive and negative examples:
+
+1. Positive Examples (80% ratio - e.g. 400 of 500 images):
+   Prescriptions containing doctor seals, hospital letterheads, and pharmacy stamps. Bounding boxes are drawn and labeled ("seal", "letterhead", "stamp"). Teaches the AI what target elements look like.
+
+2. Negative Examples (20% ratio - e.g. 100 of 500 images):
+   Plain paper notes, un-stamped envelopes, or handwritten drug slips without seals or letterheads. Uploaded to Roboflow WITHOUT drawing seal or letterhead boxes. Teaches the AI when NOT to detect seals, preventing false positive errors.
+
+## 2. DATASET CAPACITY & SIZING FLEXIBILITY
 - Flexible Sizing: There is NO hard upper or lower limit on dataset size. You can train datasets containing 50, 100, 500, 1,000, or 5,000+ images.
 - Baseline Datasets (50 to 100 images): Suitable for quick proof-of-concept tests (~80-85% mAP).
 - Standard Production Datasets (500 images): Sweet spot for high accuracy (>92% mAP) across Sri Lankan seals and letterheads.
 - Large Scale Production Datasets (1,000+ images): Provides maximum robustness (>96% mAP) across rare hospital layouts and angled photos.
 
-## 2. DATASET ARCHITECTURE: 1 COMBINED DATASET VS 4 SEPARATE DATASETS
+## 3. DATASET ARCHITECTURE: 1 COMBINED DATASET VS 4 SEPARATE DATASETS
 - Recommended Approach: ONE COMBINED DATASET containing 4 target classes ("seal", "letterhead", "stamp", "layout").
 - Why One Combined Dataset: YOLO processes the image in a single neural network pass and detects all 4 elements simultaneously.
 - Separate Datasets: You can also train separate models (e.g. "seal_detector" using a seal-only dataset) if you want to update seal weights without retraining letterhead weights.
 
-## 3. MULTI-USER COLLABORATION: MERGING DATASETS FROM MULTIPLE TEAM MEMBERS
+## 4. MULTI-USER COLLABORATION: MERGING DATASETS FROM MULTIPLE TEAM MEMBERS
 When Member A collects 500 images and Member B collects 500 images:
 1. Member A creates a Roboflow project (e.g. "sri-lankan-prescriptions-master").
 2. Member A invites Member B via email (Members -> Invite Member).
@@ -51,58 +60,50 @@ When Member A collects 500 images and Member B collects 500 images:
 4. Click "Generate Version". Roboflow automatically combines all 1000 images and splits them into Train (800), Validation (140), and Test (60).
 5. Export as "YOLOv11 PyTorch" zip ("sri_lankan_prescriptions_1000.zip").
 
-## 4. IMAGE COLLECTION SPECIFICATIONS (500-IMAGE RATIO)
-- 300 Clean Images: Straight, well-lit prescription photos taken at eye level.
-- 100 Angled / Rotated Images: Photos taken at 15 to 30 degree tilts, under shadows, or with slight creases.
-- 50 Doctor Seal Close-ups: Blue and purple round Sri Lanka Medical Council (SLMC) registered doctor seals.
-- 50 Hospital & Pharmacy Stamps: Dark blue rectangular dispensary stamps from major hospitals.
+## 5. IMAGE COLLECTION SPECIFICATIONS (500-IMAGE RATIO)
+- 300 Clean Positive Images: Straight, well-lit prescription photos taken at eye level.
+- 100 Angled / Rotated Positive Images: Photos taken at 15 to 30 degree tilts, under shadows, or with slight creases.
+- 100 Negative Images: Plain un-stamped notes and envelopes without seals or printed headers.
 
-## 5. STEP-BY-STEP ROBOFLOW ANNOTATION
+## 6. STEP-BY-STEP ROBOFLOW ANNOTATION
 1. Go to https://roboflow.com and create an Object Detection project.
 2. Add 4 class names: "seal", "letterhead", "stamp", "layout".
-3. Upload your images.
-4. Draw tight bounding boxes:
+3. Upload your images (positive and negative samples).
+4. Draw tight bounding boxes on positive images:
    - Class "seal": Round or oval doctor seals.
    - Class "letterhead": Top printed header (hospital name, logo, address, phone numbers).
    - Class "stamp": Rectangular pharmacy verification stamps.
    - Class "layout": Rx symbol and body medicine prescription text lines.
-5. Export dataset as "YOLOv11 PyTorch" zip.
+5. On negative images (plain notes without seals), do not draw seal or letterhead boxes.
+6. Export dataset as "YOLOv11 PyTorch" zip.
 
 ---
 
 # PART 3: MANUAL VS AUTOMATIC TRAINING WORKFLOWS & INCREMENTAL DATASET UPDATES
 
-## 1. UNDERSTANDING THE AUTOMATIC THRESHOLD ("500 IMAGES")
-The "500 images" metric shown in the Automatic Training Rules is NOT a maximum limit or restriction. It is an automated trigger rule:
-- Manual Training: Has NO threshold condition. You can train datasets of any size (100, 500, 1000+) at any time by clicking "Start Manual Training".
+## 1. UNDERSTANDING HYPERPARAMETERS (EPOCHS, BATCH SIZE, IMAGE SIZE)
+- Epochs (50): One epoch represents one complete pass over the entire dataset. Setting 50 epochs means the AI inspects all training images 50 times in sequence to minimize detection errors. Use 50 epochs for standard datasets and 80-100 epochs for datasets with 1,000+ images.
+- Batch Size (16): The number of images processed concurrently in memory per step. Standard value is 16.
+- Image Size (640): The pixel resolution (640x640) all images are resized to before entering the YOLO network. Standard industry value for optimal speed and detail.
+
+## 2. ESTIMATED TRAINING DURATION
+- Dedicated GPU (NVIDIA RTX / T4): ~8 to 15 minutes for 1,000 images.
+- CPU Execution: ~30 to 45 minutes for 1,000 images.
+- Live Progress: Real-time progress bars and loss logs stream continuously to the Training Jobs console.
+
+## 3. UNDERSTANDING THE AUTOMATIC THRESHOLD ("500 IMAGES")
+The "500 images" metric shown in Automatic Training Rules is an automated trigger threshold, not a maximum limit:
+- Manual Training: Has no threshold. You can train datasets of any size (100, 500, 1000+) at any time by clicking "Start Manual Training".
 - Automatic Retraining Trigger: When "Automatic Retraining Rules" is ENABLED, uploading any dataset zip containing more than 500 images automatically triggers background PyTorch fine-tuning without requiring manual user intervention.
 
-## 2. MANUAL TRAINING SETUP (TAB 4)
-- Target Detector Models:
-  - Seal Detector (seal_detector): Fine-tunes doctor seal detection.
-  - Letterhead Detector (letterhead_detector): Fine-tunes hospital header detection.
-  - Stamp Detector (stamp_detector): Fine-tunes pharmacy verification stamp detection.
-  - Prescription Layout Detector (layout_detector): Fine-tunes Rx and text block layout detection.
-- Hyperparameters:
-  - Epochs: 50 for standard datasets, 80-100 for datasets with 1,000+ images.
-  - Batch Size: 16 (images processed concurrently per batch).
-  - Image Size: 640 (resolution fed into YOLO).
-
-## 3. INCREMENTAL MODEL FINE-TUNING (ADDING NEW IMAGES TO EXISTING MODELS)
-When you have an active model trained on a base dataset and later collect additional prescription images, follow the incremental fine-tuning workflow:
-
-1. Add New Images to Existing Project:
-   - In Roboflow, upload your additional newly collected prescription photos into your existing project repository.
-2. Label New Images:
-   - Draw bounding boxes and assign standard class labels ("seal", "letterhead", "stamp", "layout").
-3. Export Updated Master Version:
-   - Click "Generate Version" to create an updated dataset release (e.g. version 2 containing all combined previous and new images).
-   - Export as "YOLOv11 PyTorch" zip archive.
-4. Upload and Fine-Tune:
-   - Upload the updated zip archive via the Datasets tab.
-   - Run training (manually or via automatic trigger). PyTorch initializes weights from the previous active build, fine-tunes on the expanded dataset, and generates a new candidate model build (e.g. v2 or v3) with higher accuracy.
-5. Activate New Candidate Build:
-   - Navigate to Deployment & Model Registry tab and click "Activate" on the new candidate build.
+## 4. INCREMENTAL MODEL FINE-TUNING (ADDING NEW IMAGES TO EXISTING MODELS)
+When you have an active model trained on a base dataset and later collect additional prescription images:
+1. Upload newly collected photos into your existing Roboflow project repository.
+2. Label positive images with standard class names ("seal", "letterhead", "stamp", "layout"). Leave negative images un-boxed for seals.
+3. Click "Generate Version" to create an updated dataset release (e.g. version 2 containing all combined previous and new images).
+4. Export as "YOLOv11 PyTorch" zip archive.
+5. Upload zip via the Datasets tab. PyTorch initializes weights from the previous active build, fine-tunes on the expanded dataset, and generates a new candidate model build (e.g. v2 or v3) with higher accuracy.
+6. Navigate to Deployment & Model Registry tab and click "Activate" on the new candidate build.
 
 ---
 
