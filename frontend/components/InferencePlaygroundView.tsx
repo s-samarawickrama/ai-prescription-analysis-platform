@@ -255,21 +255,25 @@ export const InferencePlaygroundView: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
                   <div className="bg-[#0f1117] p-2 rounded border border-slate-800">
-                    <div className="text-slate-400">Blur Score</div>
-                    <div className="text-slate-100 font-bold">0.86</div>
+                    <div className="text-slate-400">Clarity Score</div>
+                    <div className="text-slate-100 font-bold">{result.clarity_score} / 20</div>
                   </div>
                   <div className="bg-[#0f1117] p-2 rounded border border-slate-800">
-                    <div className="text-slate-400">Resolution</div>
-                    <div className="text-emerald-400 font-bold">Good</div>
+                    <div className="text-slate-400">Quality Status</div>
+                    <div className={result.clarity_score >= 12.0 ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                      {result.clarity_score >= 12.0 ? "Pass" : "Fail"}
+                    </div>
                   </div>
                   <div className="bg-[#0f1117] p-2 rounded border border-slate-800">
-                    <div className="text-slate-400">Noise</div>
-                    <div className="text-emerald-400 font-bold">Low</div>
+                    <div className="text-slate-400">Gate Threshold</div>
+                    <div className="text-emerald-400 font-bold">12.0 / 20</div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-[#0f1117] rounded border border-slate-800">
-                  <span className="text-slate-400">Clarity Score Gate:</span>
-                  <span className="text-emerald-400 font-bold text-sm">{result.clarity_score} / 20</span>
+                  <span className="text-slate-400">Pipeline Decision:</span>
+                  <span className={result.status === "READY_FOR_REVIEW" ? "text-emerald-400 font-bold text-xs" : "text-amber-400 font-bold text-xs"}>
+                    {result.status}
+                  </span>
                 </div>
               </div>
 
