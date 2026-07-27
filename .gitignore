@@ -1,0 +1,22 @@
+# Python / Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+build/
+.ds_store
+*.log
+
+# Storage runtime data (keep folder structure)
+storage/datasets/*
+storage/models/*
+storage/training_runs/*
+!storage/.gitkeep
