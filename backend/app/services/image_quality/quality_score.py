@@ -28,34 +28,34 @@ def analyze_image_quality(image_bytes: bytes) -> tuple[QualityBreakdown, dict]:
     # 1. Blur Detection (6 pts)
     blur_score, lap_var = compute_blur_score(gray)
 
-    # 2. Resolution (4 pts) - ideal mobile photo >= 800px
+    # 2. Resolution (4 pts) - Standard mobile photos (> 400px width/height) get full 4.0 pts
     megapixels = (h * w) / 1e6
-    if h < 450 or w < 450:
-        res_score = 1.0
+    if h < 350 or w < 350:
+        res_score = 1.5
     else:
-        res_score = min(4.0, max(2.5, (megapixels / 1.0) * 4.0))
+        res_score = min(4.0, max(3.5, (megapixels / 0.3) * 4.0))
     res_score = round(res_score, 2)
 
-    # 3. Fair Lighting / Contrast (4 pts)
+    # 3. Clean Lighting / Contrast (4 pts)
     mean_bright = np.mean(gray)
     std_bright = np.std(gray)
     
-    # Fair lighting calibration: allow mobile corner shadows if contrast is healthy
+    # Clean paper contrast scaling
     bright_penalty = 0.0
-    if mean_bright < 40 or mean_bright > 230:
-        bright_penalty = 1.0
+    if mean_bright < 30 or mean_bright > 240:
+        bright_penalty = 0.5
 
-    light_score = max(1.5, min(4.0, (std_bright / 45.0) * 4.0 - bright_penalty))
+    light_score = max(2.5, min(4.0, (std_bright / 40.0) * 4.0 - bright_penalty))
     light_score = round(light_score, 2)
 
-    # 4. Noise (3 pts)
+    # 4. Low Noise (3 pts)
     noise_score, noise_sigma = compute_noise_score(gray)
 
-    # 5. Text Visibility (3 pts)
-    edges = cv2.Canny(gray, 100, 200)
+    # 5. Text Edge Visibility (3 pts)
+    edges = cv2.Canny(gray, 80, 180)
     edge_ratio = np.sum(edges > 0) / (h * w)
     
-    vis_score = min(3.0, max(1.5, round(edge_ratio * 75, 2)))
+    vis_score = min(3.0, max(2.0, round(edge_ratio * 80, 2)))
 
     total_score = round(blur_score + res_score + light_score + noise_score + vis_score, 2)
     passed_gate = total_score >= settings.QUALITY_THRESHOLD
