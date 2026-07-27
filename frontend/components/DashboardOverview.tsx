@@ -52,20 +52,20 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ setActiveT
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
         <div className="bg-[#16191f] border border-[#232f3e] p-3 rounded space-y-1">
           <div className="text-[11px] text-slate-400 uppercase">Active Models</div>
-          <div className="text-xl font-bold text-slate-100">{Object.keys(models).length || 4}</div>
-          <div className="text-[10px] text-slate-400">Seal v3, Letterhead v2</div>
+          <div className="text-xl font-bold text-slate-100">{Object.keys(models).length}</div>
+          <div className="text-[10px] text-slate-400">YOLOv11 Production</div>
         </div>
 
         <div className="bg-[#16191f] border border-[#232f3e] p-3 rounded space-y-1">
-          <div className="text-[11px] text-slate-400 uppercase">Running Jobs</div>
-          <div className="text-xl font-bold text-amber-400">{jobs.filter(j => j.status === 'training').length || 1} Running</div>
-          <div className="text-[10px] text-slate-400">2 Queued</div>
+          <div className="text-[11px] text-slate-400 uppercase">Training Jobs</div>
+          <div className="text-xl font-bold text-amber-400">{jobs.filter(j => j.status === 'training').length} Running</div>
+          <div className="text-[10px] text-slate-400">{jobs.filter(j => j.status === 'queued').length} Queued</div>
         </div>
 
         <div className="bg-[#16191f] border border-[#232f3e] p-3 rounded space-y-1">
           <div className="text-[11px] text-slate-400 uppercase">Storage</div>
-          <div className="text-xl font-bold text-slate-100">{datasets.length || 15} Datasets</div>
-          <div className="text-[10px] text-slate-400">24 Model Builds</div>
+          <div className="text-xl font-bold text-slate-100">{datasets.length} Datasets</div>
+          <div className="text-[10px] text-slate-400">Target Datasets</div>
         </div>
 
         <div className="bg-[#16191f] border border-[#232f3e] p-3 rounded space-y-1">
