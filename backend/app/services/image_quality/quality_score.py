@@ -25,32 +25,41 @@ def analyze_image_quality(image_bytes: bytes) -> tuple[QualityBreakdown, dict]:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape[:2]
 
-    # 1. Blur (6 pts)
+    # 1. Strict Blur Detection (6 pts)
     blur_score, lap_var = compute_blur_score(gray)
 
-    # 2. Resolution (4 pts) - ideal height >= 1000px, width >= 800px
+    # 2. Resolution (4 pts) - penalize low res images (e.g. small mobile thumbnails < 600px)
     megapixels = (h * w) / 1e6
-    res_score = min(4.0, (megapixels / 1.5) * 4.0)
+    if h < 600 or w < 600:
+        res_score = 1.0
+    else:
+        res_score = min(4.0, (megapixels / 2.0) * 4.0)
     res_score = round(res_score, 2)
 
-    # 3. Lighting / Contrast (4 pts)
+    # 3. Lighting / Contrast / Handwriting Edge Sharpening (4 pts)
     mean_bright = np.mean(gray)
     std_bright = np.std(gray)
-    # Brightness penalty if under 40 or over 235
+    
+    # Penalize uneven shadows or low contrast handwritten text
     bright_penalty = 0.0
-    if mean_bright < 50 or mean_bright > 220:
-        bright_penalty = 1.5
-    light_score = max(0.0, min(4.0, (std_bright / 50.0) * 4.0 - bright_penalty))
+    if mean_bright < 70 or mean_bright > 210 or std_bright < 35:
+        bright_penalty = 2.0
+
+    light_score = max(0.0, min(4.0, (std_bright / 60.0) * 4.0 - bright_penalty))
     light_score = round(light_score, 2)
 
     # 4. Noise (3 pts)
     noise_score, noise_sigma = compute_noise_score(gray)
 
-    # 5. Visibility / Aspect / Margins (3 pts)
-    aspect_ratio = max(h, w) / max(1, min(h, w))
-    # Extreme aspect ratio > 3.0 penalizes visibility
-    vis_score = 3.0 if aspect_ratio <= 2.5 else max(1.0, 3.0 - (aspect_ratio - 2.5))
-    vis_score = round(vis_score, 2)
+    # 5. Text Line Edge Contrast Visibility (3 pts)
+    edges = cv2.Canny(gray, 100, 200)
+    edge_ratio = np.sum(edges > 0) / (h * w)
+    
+    # Low edge contrast indicates blurry paper handwriting
+    if edge_ratio < 0.025:
+        vis_score = 0.5
+    else:
+        vis_score = min(3.0, round(edge_ratio * 60, 2))
 
     total_score = round(blur_score + res_score + light_score + noise_score + vis_score, 2)
     passed_gate = total_score >= settings.QUALITY_THRESHOLD
@@ -67,11 +76,11 @@ def analyze_image_quality(image_bytes: bytes) -> tuple[QualityBreakdown, dict]:
 
     metrics = {
         "laplacian_variance": lap_var,
-        "resolution_px": f"{w}x{h}",
-        "megapixels": round(megapixels, 2),
-        "mean_brightness": round(float(mean_bright), 2),
-        "std_contrast": round(float(std_bright), 2),
+        "resolution_megapixels": round(megapixels, 2),
+        "mean_brightness": round(mean_bright, 2),
+        "std_contrast": round(std_bright, 2),
         "noise_sigma": noise_sigma,
+        "edge_contrast_ratio": round(edge_ratio, 4)
     }
 
     return breakdown, metrics
