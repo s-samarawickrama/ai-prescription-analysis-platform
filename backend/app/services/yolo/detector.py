@@ -117,7 +117,7 @@ def run_yolo_detections(image_bytes: bytes) -> AllDetections:
         horizontal_lines = cv2.morphologyEx(edges_top, cv2.MORPH_OPEN, horizontal_kernel)
         has_header_line = np.sum(horizontal_lines > 0) > 300
 
-        if top_edge_ratio > 0.055 and has_header_line:
+        if top_edge_ratio > 0.025 or has_header_line:
             lh_found = True
             lh_conf = 0.91
             lh_box = BoundingBox(x_min=int(w*0.05), y_min=int(h*0.02), x_max=int(w*0.95), y_max=int(h*0.22))
