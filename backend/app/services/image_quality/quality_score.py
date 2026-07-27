@@ -25,41 +25,37 @@ def analyze_image_quality(image_bytes: bytes) -> tuple[QualityBreakdown, dict]:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape[:2]
 
-    # 1. Strict Blur Detection (6 pts)
+    # 1. Blur Detection (6 pts)
     blur_score, lap_var = compute_blur_score(gray)
 
-    # 2. Resolution (4 pts) - penalize low res images (e.g. small mobile thumbnails < 600px)
+    # 2. Resolution (4 pts) - ideal mobile photo >= 800px
     megapixels = (h * w) / 1e6
-    if h < 600 or w < 600:
+    if h < 450 or w < 450:
         res_score = 1.0
     else:
-        res_score = min(4.0, (megapixels / 2.0) * 4.0)
+        res_score = min(4.0, max(2.5, (megapixels / 1.0) * 4.0))
     res_score = round(res_score, 2)
 
-    # 3. Lighting / Contrast / Handwriting Edge Sharpening (4 pts)
+    # 3. Fair Lighting / Contrast (4 pts)
     mean_bright = np.mean(gray)
     std_bright = np.std(gray)
     
-    # Penalize uneven shadows or low contrast handwritten text
+    # Fair lighting calibration: allow mobile corner shadows if contrast is healthy
     bright_penalty = 0.0
-    if mean_bright < 70 or mean_bright > 210 or std_bright < 35:
-        bright_penalty = 2.0
+    if mean_bright < 40 or mean_bright > 230:
+        bright_penalty = 1.0
 
-    light_score = max(0.0, min(4.0, (std_bright / 60.0) * 4.0 - bright_penalty))
+    light_score = max(1.5, min(4.0, (std_bright / 45.0) * 4.0 - bright_penalty))
     light_score = round(light_score, 2)
 
     # 4. Noise (3 pts)
     noise_score, noise_sigma = compute_noise_score(gray)
 
-    # 5. Text Line Edge Contrast Visibility (3 pts)
+    # 5. Text Visibility (3 pts)
     edges = cv2.Canny(gray, 100, 200)
     edge_ratio = np.sum(edges > 0) / (h * w)
     
-    # Low edge contrast indicates blurry paper handwriting
-    if edge_ratio < 0.025:
-        vis_score = 0.5
-    else:
-        vis_score = min(3.0, round(edge_ratio * 60, 2))
+    vis_score = min(3.0, max(1.5, round(edge_ratio * 75, 2)))
 
     total_score = round(blur_score + res_score + light_score + noise_score + vis_score, 2)
     passed_gate = total_score >= settings.QUALITY_THRESHOLD
