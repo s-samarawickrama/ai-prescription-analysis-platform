@@ -278,25 +278,27 @@ export const InferencePlaygroundView: React.FC = () => {
                 <div className="text-slate-300 font-bold border-b border-[#232f3e] pb-1">
                   YOLO Object Detection Output
                 </div>
-                <div className="space-y-1 text-[11px]">
-                  <div className="p-2 bg-[#0f1117] rounded border border-slate-800 space-y-1">
-                    <div className="flex justify-between text-slate-200 font-bold">
-                      <span>Seal Detector v3</span>
-                      <span className="text-emerald-400">Confidence: 0.94</span>
+                <div className="space-y-1.5 text-[11px]">
+                  {[
+                    { key: "Seal Detector", data: result.seal_detection },
+                    { key: "Letterhead Detector", data: result.letterhead_detection },
+                    { key: "Stamp Detector", data: result.stamp_detection },
+                    { key: "Layout Detector", data: result.layout_detection },
+                  ].map((det) => (
+                    <div key={det.key} className="p-2 bg-[#0f1117] rounded border border-slate-800 space-y-0.5">
+                      <div className="flex justify-between text-slate-200 font-bold">
+                        <span>{det.key}</span>
+                        <span className={det.data.found ? "text-emerald-400" : "text-slate-500"}>
+                          {det.data.found ? `Confidence: ${det.data.confidence}` : "Not Detected"}
+                        </span>
+                      </div>
+                      <div className="text-slate-400 text-[10px]">
+                        {det.data.bbox
+                          ? `Bounding Box: [x:${det.data.bbox.x_min}, y:${det.data.bbox.y_min}, w:${det.data.bbox.x_max - det.data.bbox.x_min}, h:${det.data.bbox.y_max - det.data.bbox.y_min}] • Object: ${det.data.label}`
+                          : "No bounding box detected on uploaded image"}
+                      </div>
                     </div>
-                    <div className="text-slate-400 text-[10px]">
-                      Bounding Box: [x:480, y:700, w:256, h:220] • Objects: seal
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#0f1117] rounded border border-slate-800 space-y-1">
-                    <div className="flex justify-between text-slate-200 font-bold">
-                      <span>Letterhead Detector v2</span>
-                      <span className="text-emerald-400">Confidence: 0.91</span>
-                    </div>
-                    <div className="text-slate-400 text-[10px]">
-                      Bounding Box: [x:40, y:20, w:720, h:200] • Objects: letterhead
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
