@@ -112,8 +112,12 @@ def run_yolo_detections(image_bytes: bytes) -> AllDetections:
         edges_top = cv2.Canny(top_region, 100, 200)
         top_edge_ratio = np.sum(edges_top > 0) / max(1, (int(h*0.25) * w))
 
-        # Requires dense printed header logo/address block
-        if top_edge_ratio > 0.040:
+        # Analyze top region for printed hospital letterhead structure (horizontal line + text density)
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
+        horizontal_lines = cv2.morphologyEx(edges_top, cv2.MORPH_OPEN, horizontal_kernel)
+        has_header_line = np.sum(horizontal_lines > 0) > 300
+
+        if top_edge_ratio > 0.055 and has_header_line:
             lh_found = True
             lh_conf = 0.91
             lh_box = BoundingBox(x_min=int(w*0.05), y_min=int(h*0.02), x_max=int(w*0.95), y_max=int(h*0.22))
