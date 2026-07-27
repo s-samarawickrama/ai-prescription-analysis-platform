@@ -42,7 +42,7 @@ def execute_yolo_fine_tuning(job_id: str, model_name: str, dataset_name: str, ep
             train_results = model.train(
                 data=data_yaml,
                 epochs=epochs,
-                batch: batch_size,
+                batch=batch_size,
                 imgsz=img_size,
                 project=log_dir,
                 name="weights",
