@@ -70,6 +70,8 @@ def execute_yolo_fine_tuning(job_id: str, model_name: str, dataset_name: str, ep
         "base_weights": base_checkpoint,
         "accuracy": f"{int(job['metrics']['mAP50'] * 100)}%",
         "map50": job["metrics"]["mAP50"],
+        "precision": job["metrics"]["precision"],
+        "recall": job["metrics"]["recall"],
         "trained_date": datetime.now().strftime("%Y-%m-%d"),
         "status": "candidate",
         "active": False
