@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from app.storage.storage_manager import get_models_registry, activate_model_version, save_models_registry
+from app.storage.storage_manager import get_models_registry, set_active_model_version, save_models_registry
 from app.core.security import verify_token
 
 router = APIRouter(prefix="/admin/models", tags=["Model Management"])
@@ -16,7 +16,7 @@ async def list_models(user=Depends(verify_token)):
 
 @router.post("/activate", summary="Activate Approved Model Version")
 async def activate_model(req: ActivateModelRequest, user=Depends(verify_token)):
-    success = activate_model_version(req.model_name, req.version)
+    success = set_active_model_version(req.model_name, req.version)
     if not success:
         raise HTTPException(status_code=400, detail=f"Model version {req.model_name}:{req.version} not found.")
     return {"message": f"Successfully activated {req.model_name} {req.version}", "active_model": req.model_name, "version": req.version}
