@@ -2,6 +2,8 @@
 
 > An industry-quality, production-ready AI Prescription Analysis Platform designed to evaluate prescription image clarity, detect letterheads, seals, stamps, and layout regions, provide optional OCR assistance, compute a unified 100-point AI quality score, and manage YOLOv11 model lifecycles via an internal MLOps dashboard.
 
+> **Official User & QA Training Manual**: For complete step-by-step instructions on 500-image dataset collection, Roboflow labeling, multi-user dataset merging, UI walkthrough, and Postman API testing, refer to [PLATFORM_USER_QA_TRAINING_GUIDE.md](file:///c:/Users/KINGSLEY/Desktop/AI%20Prescription%20Analysis%20Platform/PLATFORM_USER_QA_TRAINING_GUIDE.md).
+
 ---
 
 ## System Architecture Diagram
