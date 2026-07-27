@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Upload, CheckCircle2, AlertTriangle, Eye, RefreshCw, FileText, Code2 } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, Eye, RefreshCw, FileText, Code2, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { PrescriptionAnalysisResponse } from "@/lib/types";
 
@@ -12,6 +12,15 @@ export const InferencePlaygroundView: React.FC = () => {
   const [result, setResult] = useState<PrescriptionAnalysisResponse | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -204,11 +213,20 @@ export const InferencePlaygroundView: React.FC = () => {
             </div>
 
             <div className="flex space-x-2">
+              {selectedFile && (
+                <button
+                  onClick={handleRemoveImage}
+                  className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/60 text-red-300 text-xs font-semibold rounded border border-red-800/60 transition flex items-center justify-center space-x-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear</span>
+                </button>
+              )}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex-1 py-1.5 bg-[#232f3e] hover:bg-[#2c3b4e] text-slate-200 text-xs font-medium rounded border border-slate-700"
               >
-                Select File
+                {selectedFile ? "Change Image" : "Select File"}
               </button>
               <button
                 onClick={handleRunAnalysis}
