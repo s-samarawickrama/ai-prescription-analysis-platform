@@ -1,10 +1,36 @@
-# MASTER COMPREHENSIVE GUIDE: EVERYTHING ABOUT AI TRAINING, TESTING, QA SCORING, AND DEPLOYMENT
+# MASTER MANUAL: DATASET COLLECTION, ROBOFLOW ANNOTATION, FINE-TUNING, QA SCORING, AND DEPLOYMENT
 
 This document is the single authoritative manual for Business Analysts (BAs), QA Testers, Software Engineers, and Operations staff. It covers every technical and operational aspect of the AI Prescription Analysis Platform without emojis.
 
 ---
 
-# PART 1: COMPREHENSIVE TRAINING MANUAL
+# PART 1: HOW THE AI RECOGNIZES SEALS, LETTERHEADS, AND STAMPS
+
+## 1. HOW CLASS LABELS AND BOUNDING BOXES WORK IN YOLO
+When annotating images in Roboflow, each drawn bounding box is attached to a specific class label. When exported in YOLOv11 PyTorch format, Roboflow generates two critical files:
+
+### A. The Class Mapping File (data.yaml):
+Defines class indices to label names:
+```yaml
+names:
+  0: seal
+  1: letterhead
+  2: stamp
+  3: layout
+```
+
+### B. The Label Annotation Files (labels/*.txt):
+For every image (e.g. prescription_001.jpg), a matching text file (prescription_001.txt) stores normalized bounding box coordinates:
+```text
+0 0.82 0.85 0.25 0.20   <-- Class 0 = "seal" (x_center, y_center, width, height)
+1 0.50 0.10 0.90 0.15   <-- Class 1 = "letterhead" (x_center, y_center, width, height)
+2 0.70 0.80 0.30 0.15   <-- Class 2 = "stamp" (x_center, y_center, width, height)
+```
+During PyTorch fine-tuning, the neural network learns visual features associated with class index 0 as seals, class index 1 as letterheads, and class index 2 as stamps.
+
+---
+
+# PART 2: COMPREHENSIVE TRAINING & MLOPS MANUAL
 
 ## 1. DATASET CAPACITY & SIZING
 - Minimum Dataset Size: 50 to 100 images (suitable for quick baseline tests, ~80-85% mAP).
@@ -13,7 +39,7 @@ This document is the single authoritative manual for Business Analysts (BAs), QA
 - Image Limit: There is NO upper limit. You can upload 500, 1000, 5000, or more images.
 
 ## 2. DATASET ARCHITECTURE: 1 COMBINED DATASET VS 4 SEPARATE DATASETS
-- Recommended Approach: ONE COMBINED DATASET with 4 target classes ("seal", "letterhead", "stamp", "layout").
+- Recommended Approach: ONE COMBINED DATASET containing 4 target classes ("seal", "letterhead", "stamp", "layout").
 - Why One Combined Dataset: YOLO processes the image in a single neural network pass and detects all 4 elements simultaneously.
 - Separate Datasets: You can also train separate models (e.g. "seal_detector" using a seal-only dataset) if you want to update seal weights without retraining letterhead weights.
 
@@ -44,11 +70,30 @@ When Member A collects 500 images and Member B collects 500 images:
 
 ---
 
-# PART 2: COMPREHENSIVE QA & TESTING MANUAL
+# PART 3: MANUAL VS AUTOMATIC TRAINING WORKFLOWS
+
+## 1. MANUAL TRAINING SETUP (TAB 4)
+- Target Detector Models:
+  - Seal Detector (seal_detector): Fine-tunes doctor seal detection.
+  - Letterhead Detector (letterhead_detector): Fine-tunes hospital header detection.
+  - Stamp Detector (stamp_detector): Fine-tunes pharmacy verification stamp detection.
+  - Prescription Layout Detector (layout_detector): Fine-tunes Rx and text block layout detection.
+- Hyperparameters:
+  - Epochs: 50 (passes over the training dataset).
+  - Batch Size: 16 (images processed concurrently per batch).
+  - Image Size: 640 (resolution fed into YOLO).
+
+## 2. AUTOMATIC TRAINING RULES (AUTOMATED MLOPS RETRAINING)
+Enable "Automatic Retraining Rules" on Tab 4 to automate PyTorch retraining:
+- Trigger Condition 1 (Dataset Threshold): Retrains automatically when new uploaded images exceed 500.
+- Trigger Condition 2 (Accuracy Drift): Retrains automatically when mAP accuracy drops below 0.85.
+- Trigger Condition 3 (Monthly Cadence): Runs scheduled monthly retraining to incorporate newly collected images.
+
+---
+
+# PART 4: COMPREHENSIVE QA & TESTING MANUAL
 
 ## 1. OPENCV QUALITY GATE SCORING ENGINE (20 POINTS MAX)
-Before object detection runs, OpenCV evaluates the raw image quality:
-
 Quality Formula (20-Point Scale):
 - Clarity Score = (Resolution Weight * 5.0) + (Sobel Tenengrad Edge Gradient * 10.0) + (Contrast Variance * 5.0)
 
@@ -61,16 +106,11 @@ Quality Gate Rule:
 Total Score = Quality Score (20pts) + Letterhead Score (30pts) + Seal/Stamp Score (25pts) + Layout Score (15pts) + OCR Score (10pts)
 
 Breakdown:
-1. Image Clarity Gate (20 pts max):
-   Evaluates blur, contrast, and resolution. (Must be >= 12.0 to pass gate).
-2. Letterhead / Doctor Info (30 pts max):
-   Evaluates top printed header presence, hospital logo, and contact text block.
-3. Seal & Official Stamp (25 pts max):
-   Evaluates doctor rubber seal (15 pts) and pharmacy dispensary stamp (10 pts).
-4. Prescription Layout (15 pts max):
-   Evaluates Rx symbol, medicine list structure, and signature line.
-5. OCR Text Assistance (10 pts max):
-   Evaluates line-by-line OCR text extraction confidence. (OCR failure does NOT reject the image).
+1. Image Clarity Gate (20 pts max): Evaluates blur, contrast, and resolution. (Must be >= 12.0 to pass gate).
+2. Letterhead / Doctor Info (30 pts max): Evaluates top printed header presence, hospital logo, and contact text block.
+3. Seal & Official Stamp (25 pts max): Evaluates doctor rubber seal (15 pts) and pharmacy dispensary stamp (10 pts).
+4. Prescription Layout (15 pts max): Evaluates Rx symbol, medicine list structure, and signature line.
+5. OCR Text Assistance (10 pts max): Evaluates line-by-line OCR text extraction confidence. (OCR failure does NOT reject the image).
 
 Final Decision Thresholds:
 - Score >= 75.0: High Confidence Authentic Prescription.
@@ -83,34 +123,21 @@ Final Decision Thresholds:
 
 ---
 
-# PART 3: WEB DASHBOARD UI TAB-BY-TAB GUIDE
+# PART 5: WEB DASHBOARD UI TAB-BY-TAB GUIDE
 
 Navigate to http://localhost:3000 in your web browser.
 
-1. Tab 1: Dashboard Overview
-   Displays real-time system health, active production model versions, total stored datasets, running training jobs, and the 12.0/20 clarity gate threshold.
-
-2. Tab 2: Inference Playground (Testing Prescriptions)
-   Upload prescription photos, run inference, view live OpenCV clarity scores, view YOLO bounding boxes, and inspect raw JSON payloads. Click "Clear Sample" to reset.
-
-3. Tab 3: Datasets (Uploading Zip Files)
-   Click "Upload Dataset Zip", select your Roboflow zip ("sri_lankan_prescriptions_500.zip"), enter a dataset name, and click Submit. The system unpacks the archive into storage/datasets/.
-
-4. Tab 4: Training Jobs (Running YOLO Fine-Tuning)
-   Select target model ("seal_detector"), select dataset, configure hyperparameters (Epochs: 50, Batch Size: 16, Image Size: 640), and click "Start Manual Training". Monitor real-time logs and epoch progress curves.
-
-5. Tab 5: Model Evaluation & Benchmark Matrix
-   Compare mAP@50, precision, and recall benchmarks across version builds (v1, v2, v3).
-
-6. Tab 6: Deployment & Model Registry
-   Review candidate builds. Click "Activate" on version v2 to promote it to ACTIVE production status instantly.
-
-7. Tab 7: Experiment Tracker
-   View historical hyperparameter trial runs, dataset iterations, and "BEST RUN" badges.
+1. Tab 1: Dashboard Overview: System health, active production models, active datasets, clarity gate threshold.
+2. Tab 2: Inference Playground: Test single prescriptions, view live OpenCV clarity scores, view YOLO bounding boxes, inspect JSON payloads. Click "Clear Sample" to reset.
+3. Tab 3: Datasets: Upload single or multi-user zip archives ("sri_lankan_prescriptions_500.zip").
+4. Tab 4: Training Jobs: Configure hyperparameters and start PyTorch fine-tuning. Monitor real-time logs and epoch progress curves.
+5. Tab 5: Model Evaluation: Compare mAP@50, precision, and recall benchmarks across version builds (v1, v2, v3).
+6. Tab 6: Deployment & Model Registry: Review candidate builds. Click "Activate" on version v2 to promote it to ACTIVE production status instantly.
+7. Tab 7: Experiment Tracker: View historical hyperparameter trial runs and track the "BEST RUN" badge.
 
 ---
 
-# PART 4: PRE-DEPLOYMENT API TESTING & PRODUCTION DEPLOYMENT
+# PART 6: PRE-DEPLOYMENT API TESTING & PRODUCTION DEPLOYMENT
 
 ## 1. HOW TO TEST MODELS BEFORE DEPLOYMENT
 - UI Testing: Upload test images in Tab 2 (Inference Playground) before activating a new build.
