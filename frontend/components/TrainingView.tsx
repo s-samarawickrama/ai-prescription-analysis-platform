@@ -15,6 +15,7 @@ export const TrainingView: React.FC = () => {
   const [starting, setStarting] = useState<boolean>(false);
   const [activeJobs, setActiveJobs] = useState<TrainingJob[]>([]);
   const [autoRules, setAutoRules] = useState<AutomaticRules | null>(null);
+  const [availableDatasets, setAvailableDatasets] = useState<any[]>([]);
 
   const fetchJobs = async () => {
     try {
@@ -22,6 +23,11 @@ export const TrainingView: React.FC = () => {
       setActiveJobs(jobs);
       const rules = await api.getAutoRules();
       setAutoRules(rules);
+      const dsList = await api.listDatasets();
+      setAvailableDatasets(dsList);
+      if (dsList.length > 0 && !datasetName) {
+        setDatasetName(dsList[0].name);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -96,11 +102,15 @@ export const TrainingView: React.FC = () => {
                   onChange={(e) => setDatasetName(e.target.value)}
                   className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-slate-200 text-xs font-mono focus:outline-none focus:border-slate-700"
                 >
-                  <option value="seal_dataset_v1">seal_dataset_v1 (450 images)</option>
-                  <option value="seal_dataset_v2">seal_dataset_v2 (820 images)</option>
-                  <option value="letterhead_dataset_v1">letterhead_dataset_v1 (520 images)</option>
-                  <option value="stamp_dataset_v1">stamp_dataset_v1 (390 images)</option>
-                  <option value="layout_dataset_v1">layout_dataset_v1 (610 images)</option>
+                  {availableDatasets.length > 0 ? (
+                    availableDatasets.map((ds) => (
+                      <option key={ds.name} value={ds.name}>
+                        {ds.name} ({ds.image_count || 100} images)
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No datasets uploaded on disk</option>
+                  )}
                 </select>
               </div>
 
