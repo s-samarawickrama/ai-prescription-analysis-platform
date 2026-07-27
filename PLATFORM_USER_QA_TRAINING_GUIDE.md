@@ -32,11 +32,11 @@ During PyTorch fine-tuning, the neural network learns visual features associated
 
 # PART 2: COMPREHENSIVE TRAINING & MLOPS MANUAL
 
-## 1. DATASET CAPACITY & SIZING
-- Minimum Dataset Size: 50 to 100 images (suitable for quick baseline tests, ~80-85% mAP).
-- Recommended Dataset Size: 500 images (ideal balance for high accuracy, >92% mAP).
-- Large Scale Production Size: 1,000+ images (provides maximum robustness across rare hospital layouts).
-- Image Limit: There is NO upper limit. You can upload 500, 1000, 5000, or more images.
+## 1. DATASET CAPACITY & SIZING FLEXIBILITY
+- Flexible Sizing: There is NO hard upper or lower limit on dataset size. You can train datasets containing 50, 100, 500, 1,000, or 5,000+ images.
+- Baseline Datasets (50 to 100 images): Suitable for quick proof-of-concept tests (~80-85% mAP).
+- Standard Production Datasets (500 images): Sweet spot for high accuracy (>92% mAP) across Sri Lankan seals and letterheads.
+- Large Scale Production Datasets (1,000+ images): Provides maximum robustness (>96% mAP) across rare hospital layouts and angled photos.
 
 ## 2. DATASET ARCHITECTURE: 1 COMBINED DATASET VS 4 SEPARATE DATASETS
 - Recommended Approach: ONE COMBINED DATASET containing 4 target classes ("seal", "letterhead", "stamp", "layout").
@@ -60,7 +60,7 @@ When Member A collects 500 images and Member B collects 500 images:
 ## 5. STEP-BY-STEP ROBOFLOW ANNOTATION
 1. Go to https://roboflow.com and create an Object Detection project.
 2. Add 4 class names: "seal", "letterhead", "stamp", "layout".
-3. Upload your 500 images.
+3. Upload your images.
 4. Draw tight bounding boxes:
    - Class "seal": Round or oval doctor seals.
    - Class "letterhead": Top printed header (hospital name, logo, address, phone numbers).
@@ -70,24 +70,39 @@ When Member A collects 500 images and Member B collects 500 images:
 
 ---
 
-# PART 3: MANUAL VS AUTOMATIC TRAINING WORKFLOWS
+# PART 3: MANUAL VS AUTOMATIC TRAINING WORKFLOWS & INCREMENTAL DATASET UPDATES
 
-## 1. MANUAL TRAINING SETUP (TAB 4)
+## 1. UNDERSTANDING THE AUTOMATIC THRESHOLD ("500 IMAGES")
+The "500 images" metric shown in the Automatic Training Rules is NOT a maximum limit or restriction. It is an automated trigger rule:
+- Manual Training: Has NO threshold condition. You can train datasets of any size (100, 500, 1000+) at any time by clicking "Start Manual Training".
+- Automatic Retraining Trigger: When "Automatic Retraining Rules" is ENABLED, uploading any dataset zip containing more than 500 images automatically triggers background PyTorch fine-tuning without requiring manual user intervention.
+
+## 2. MANUAL TRAINING SETUP (TAB 4)
 - Target Detector Models:
   - Seal Detector (seal_detector): Fine-tunes doctor seal detection.
   - Letterhead Detector (letterhead_detector): Fine-tunes hospital header detection.
   - Stamp Detector (stamp_detector): Fine-tunes pharmacy verification stamp detection.
   - Prescription Layout Detector (layout_detector): Fine-tunes Rx and text block layout detection.
 - Hyperparameters:
-  - Epochs: 50 (passes over the training dataset).
+  - Epochs: 50 for standard datasets, 80-100 for datasets with 1,000+ images.
   - Batch Size: 16 (images processed concurrently per batch).
   - Image Size: 640 (resolution fed into YOLO).
 
-## 2. AUTOMATIC TRAINING RULES (AUTOMATED MLOPS RETRAINING)
-Enable "Automatic Retraining Rules" on Tab 4 to automate PyTorch retraining:
-- Trigger Condition 1 (Dataset Threshold): Retrains automatically when new uploaded images exceed 500.
-- Trigger Condition 2 (Accuracy Drift): Retrains automatically when mAP accuracy drops below 0.85.
-- Trigger Condition 3 (Monthly Cadence): Runs scheduled monthly retraining to incorporate newly collected images.
+## 3. INCREMENTAL MODEL FINE-TUNING (ADDING NEW IMAGES TO EXISTING MODELS)
+When you have an active model trained on a base dataset and later collect additional prescription images, follow the incremental fine-tuning workflow:
+
+1. Add New Images to Existing Project:
+   - In Roboflow, upload your additional newly collected prescription photos into your existing project repository.
+2. Label New Images:
+   - Draw bounding boxes and assign standard class labels ("seal", "letterhead", "stamp", "layout").
+3. Export Updated Master Version:
+   - Click "Generate Version" to create an updated dataset release (e.g. version 2 containing all combined previous and new images).
+   - Export as "YOLOv11 PyTorch" zip archive.
+4. Upload and Fine-Tune:
+   - Upload the updated zip archive via the Datasets tab.
+   - Run training (manually or via automatic trigger). PyTorch initializes weights from the previous active build, fine-tunes on the expanded dataset, and generates a new candidate model build (e.g. v2 or v3) with higher accuracy.
+5. Activate New Candidate Build:
+   - Navigate to Deployment & Model Registry tab and click "Activate" on the new candidate build.
 
 ---
 
