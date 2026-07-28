@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "min_images_threshold": 500,
+  "schedule_interval": "monthly",
+  "accuracy_threshold_trigger": 0.85,
+  "target_model_type": "seal_detector",
+  "epochs": 50,
+  "batch_size": 16,
+  "img_size": 640
+}

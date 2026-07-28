@@ -27,7 +27,7 @@ export const api = {
     return res.data;
   },
 
-  activateModel: async (model_name: str, version: str) => {
+  activateModel: async (model_name: string, version: string) => {
     const res = await apiClient.post("/admin/models/activate", { model_name, version });
     return res.data;
   },
